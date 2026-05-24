@@ -115,6 +115,9 @@ def create_post():
         for i in range(1, 5)
     ]
     options = [o for o in options if o]
+    if len(options) == 1:
+        flash("A poll requires at least 2 options.", "error")
+        return redirect(request.referrer or url_for("social.feed"))
     if len(options) >= 2:
         poll = Poll(post=post)
         db.session.add(poll)
