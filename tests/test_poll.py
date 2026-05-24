@@ -147,6 +147,37 @@ def test_cannot_vote_twice(client, app):
         post = Post.query.filter_by(body="Double vote test").one()
         total = sum(o.vote_count for o in post.poll.options)
         assert total == 1
+        
+@pytest.mark.integration
+def test_cannot_vote_on_different_option_in_same_poll(client, app):
+    """A user should not be able to vote on a different option in the same poll."""
+    register(client, "alice")
+    client.post(
+        "/posts",
+        data={
+            "body": "Different option vote test",
+            "poll_option_1": "Yes",
+            "poll_option_2": "No",
+        },
+        follow_redirects=True,
+    )
+    with app.app_context():
+        post = Post.query.filter_by(body="Different option vote test").one()
+        option_1_id = post.poll.options[0].id
+        option_2_id = post.poll.options[1].id
+
+    client.post(f"/posts/{post.id}/vote", data={"option_id": option_1_id}, follow_redirects=True)
+    response = client.post(
+        f"/posts/{post.id}/vote",
+        data={"option_id": option_2_id},
+        follow_redirects=True,
+    )
+    assert b"already voted" in response.data
+
+    with app.app_context():
+        post = Post.query.filter_by(body="Different option vote test").one()
+        total = sum(o.vote_count for o in post.poll.options)
+        assert total == 1
 
 
 # ── End-to-End Tests (Selenium) ───────────────────────────────
