@@ -7,11 +7,19 @@
       <button type="button" class="link-button" data-media-preview-clear>Remove</button>
     </div>
   </div>
+    <div id="poll-section" style="display:none;">
+    <div style="margin: 8px 0 4px; font-size:0.9rem; font-weight:700;">Poll Options (min 2, max 4)</div>
+    <input name="poll_option_1" maxlength="280" placeholder="Option 1" style="margin-bottom:6px;">
+    <input name="poll_option_2" maxlength="280" placeholder="Option 2" style="margin-bottom:6px;">
+    <input name="poll_option_3" maxlength="280" placeholder="Option 3 (optional)" style="margin-bottom:6px;">
+    <input name="poll_option_4" maxlength="280" placeholder="Option 4 (optional)" style="margin-bottom:6px;">
+  </div>
   <div class="composer-actions">
     <label class="file-picker">
       <span>Attach image/video</span>
       <input type="file" name="media" accept="image/*,video/*" data-media-input>
     </label>
+    <button type="button" class="link-button" onclick="var s=document.getElementById('poll-section'); s.style.display=s.style.display==='none'?'block':'none';">📊 Poll</button>
     <button type="submit">Post</button>
   </div>
 </form>

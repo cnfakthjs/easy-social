@@ -121,3 +121,46 @@ class Comment(db.Model):
         UniqueConstraint("author_id", "post_id", "body", name="uq_comment_duplicate_guard"),
     )
 
+class Poll(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    post_id = db.Column(db.Integer, db.ForeignKey("post.id"), nullable=False, unique=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    post = db.relationship("Post", backref=db.backref("poll", uselist=False, cascade="all, delete-orphan"))
+    options = db.relationship("PollOption", back_populates="poll", cascade="all, delete-orphan", order_by="PollOption.position")
+
+
+class PollOption(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id"), nullable=False)
+    text = db.Column(db.String(280), nullable=False)
+    position = db.Column(db.Integer, nullable=False)
+
+    poll = db.relationship("Poll", back_populates="options")
+    votes = db.relationship("PollVote", back_populates="option", cascade="all, delete-orphan")
+
+    @property
+    def vote_count(self) -> int:
+        return len(self.votes)
+
+
+class PollVote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    option_id = db.Column(db.Integer, db.ForeignKey("poll_option.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    option = db.relationship("PollOption", back_populates="votes")
+    user = db.relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("option_id", "user_id", name="uq_poll_vote_once_per_option"),
+    )

@@ -12,6 +12,36 @@
   {% if content.body %}
     <p class="post-body">{{ content.body }}</p>
   {% endif %}
+  {% if content.poll %}
+    {% set poll = content.poll %}
+    {% set total = poll.options | sum(attribute='vote_count') %}
+    {% set user_vote = poll.options | selectattr('votes') | list %}
+    <div class="poll-block" style="margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;">
+      {% for option in poll.options %}
+        {% set pct = ((option.vote_count / total * 100) | round | int) if total > 0 else 0 %}
+        {% set already_voted = poll.options | selectattr('votes') | map(attribute='votes') | sum(start=[]) | selectattr('user_id', 'equalto', current_user.id) | list | length > 0 %}
+        {% if already_voted %}
+          <div style="padding: 10px 14px; border-bottom: 1px solid var(--line);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span>{{ option.text }}</span>
+              <span class="muted">{{ pct }}%</span>
+            </div>
+            <div style="background: var(--line); border-radius:4px; height:6px;">
+              <div style="background: var(--accent); border-radius:4px; height:6px; width:{{ pct }}%;"></div>
+            </div>
+          </div>
+        {% else %}
+          <form method="post" action="{{ url_for('social.vote', post_id=content.id) }}" style="margin:0;">
+            <input type="hidden" name="option_id" value="{{ option.id }}">
+            <button type="submit" class="link-button" style="width:100%; text-align:left; padding: 10px 14px; border-bottom: 1px solid var(--line); display:block;">
+              {{ option.text }}
+            </button>
+          </form>
+        {% endif %}
+      {% endfor %}
+      <div style="padding: 8px 14px;" class="muted">{{ total }} vote{{ 's' if total != 1 else '' }}</div>
+    </div>
+  {% endif %}
   {% if content.media_filename %}
     {% if content.media_type == "image" %}
       <img class="post-media" src="{{ media_url(content.media_filename) }}" alt="Post image from {{ content.author.username }}">
