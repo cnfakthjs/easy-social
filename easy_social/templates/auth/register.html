@@ -19,8 +19,7 @@
       <label>
         驗證碼
         <img src="{{ url_for('auth.captcha_image') }}" alt="CAPTCHA" id="captcha-img" style="display:block; margin: 8px 0; border-radius:4px;">
-        <span class="muted" style="font-size:0.85rem; cursor:pointer;" onclick="document.getElementById('captcha-img').src='{{ url_for('auth.captcha_image') }}?r='+Math.random()">看不清楚？點我換一張</span>
-        <input name="captcha" maxlength="10" autocomplete="off" required placeholder="輸入上方圖片文字">
+        <button type="button" class="link-button" style="font-size:0.85rem;" onclick="document.getElementById('captcha-img').src='/auth/captcha-image?r='+Math.random()">看不清楚？點我換一張</button>        <input name="captcha" maxlength="10" autocomplete="off" required placeholder="輸入上方圖片文字">
       </label>
       <button type="submit">Register</button>
     </form>
