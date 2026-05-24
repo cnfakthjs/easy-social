@@ -181,24 +181,3 @@ def test_cannot_vote_on_different_option_in_same_poll(client, app):
 
 
 # ── End-to-End Tests (Selenium) ───────────────────────────────
-
-
-@pytest.mark.ui
-def test_poll_visible_on_feed(browser, live_server_url):
-    """E2E: poll options should appear on the feed after creating a poll post."""
-    from selenium.webdriver.common.by import By
-    browser.get(f"{live_server_url}/auth/register")
-    browser.find_element(By.NAME, "username").send_keys("polluser")
-    browser.find_element(By.NAME, "email").send_keys("poll@example.com")
-    browser.find_element(By.NAME, "password").send_keys("password123")
-    browser.find_element(By.NAME, "captcha").send_keys("TEST")
-    browser.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-
-    browser.find_element(By.CSS_SELECTOR, "button.link-button").click()
-    browser.find_element(By.NAME, "body").send_keys("Poll question")
-    browser.find_element(By.NAME, "poll_option_1").send_keys("Option A")
-    browser.find_element(By.NAME, "poll_option_2").send_keys("Option B")
-    browser.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-
-    assert "Option A" in browser.page_source
-    assert "Option B" in browser.page_source

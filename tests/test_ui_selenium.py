@@ -209,3 +209,27 @@ def test_following_user_adds_their_posts_to_feed(browser, live_server):
 
     browser.get(f"{live_server}/")
     wait_for_text(browser, "Bob browser update")
+    
+@pytest.mark.ui
+def test_poll_visible_on_feed(browser, live_server):
+    """E2E: poll options should appear on the feed after creating a poll post."""
+    register_via_ui(browser, live_server, "polluser")
+
+    composer = browser.find_element(By.CSS_SELECTOR, "form.composer")
+
+    poll_toggle = composer.find_element(
+        By.XPATH, ".//button[contains(text(), 'Poll')]"
+    )
+    poll_toggle.click()
+
+    WebDriverWait(browser, 5).until(
+        EC.visibility_of_element_located((By.NAME, "poll_option_1"))
+    )
+
+    set_field_value(browser, browser.find_element(By.NAME, "body"), "Poll question")
+    set_field_value(browser, browser.find_element(By.NAME, "poll_option_1"), "Option A")
+    set_field_value(browser, browser.find_element(By.NAME, "poll_option_2"), "Option B")
+    submit_form(browser, composer)
+
+    wait_for_text(browser, "Option A")
+    wait_for_text(browser, "Option B")
