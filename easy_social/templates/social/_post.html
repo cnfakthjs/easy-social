@@ -15,10 +15,10 @@
   {% if content.poll %}
     {% set poll = content.poll %}
     {% set total = poll.options | sum(attribute='vote_count') %}
+    {% set already_voted = poll.options | selectattr('votes') | map(attribute='votes') | sum(start=[]) | selectattr('user_id', 'equalto', current_user.id) | list | length > 0 %}
     <div class="poll-block" style="margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;">
       {% for option in poll.options %}
         {% set pct = ((option.vote_count / total * 100) | round | int) if total > 0 else 0 %}
-        {% set already_voted = poll.options | selectattr('votes') | map(attribute='votes') | sum(start=[]) | selectattr('user_id', 'equalto', current_user.id) | list | length > 0 %}
         {% if already_voted %}
           <div style="padding: 10px 14px; border-bottom: 1px solid var(--line);">
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
