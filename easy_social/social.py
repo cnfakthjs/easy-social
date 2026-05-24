@@ -3,11 +3,12 @@ from __future__ import annotations
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import desc, func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from .extensions import db
 from .media import save_media
-from .models import Comment, Poll, PollOption, Post, User, PollVote, followers
+from .models import Comment, Poll, PollOption, PollVote, Post, User, followers
 
 bp = Blueprint("social", __name__)
 
@@ -16,6 +17,7 @@ def _post_query():
     return Post.query.options(
         joinedload(Post.author),
         joinedload(Post.repost_of).joinedload(Post.author),
+        joinedload(Post.poll),
     )
 
 
@@ -107,7 +109,7 @@ def create_post():
         author=current_user,
     )
     db.session.add(post)
-    # 處理投票選項
+
     options = [
         request.form.get(f"poll_option_{i}", "").strip()
         for i in range(1, 5)
@@ -202,6 +204,7 @@ def unfollow(username: str):
     db.session.commit()
     return redirect(request.referrer or url_for("social.profile", username=user.username))
 
+
 @bp.post("/posts/<int:post_id>/vote")
 @login_required
 def vote(post_id: int):
@@ -214,16 +217,12 @@ def vote(post_id: int):
     option_id = request.form.get("option_id", type=int)
     option = PollOption.query.filter_by(id=option_id, poll_id=poll.id).first_or_404()
 
-    already_voted = PollVote.query.join(PollOption).filter(
-        PollOption.poll_id == poll.id,
-        PollVote.user_id == current_user.id,
-    ).first()
-    if already_voted:
+    try:
+        db.session.add(PollVote(poll=poll, option=option, user=current_user))
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
         flash("You have already voted on this poll.", "error")
-        return redirect(request.referrer or url_for("social.feed"))
-
-    db.session.add(PollVote(option=option, user=current_user))
-    db.session.commit()
     return redirect(request.referrer or url_for("social.feed"))
 
 

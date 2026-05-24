@@ -24,7 +24,7 @@ def test_poll_option_vote_count(app):
 
         assert option.vote_count == 0
 
-        vote = PollVote(option=option, user=user)
+        vote = PollVote(poll=poll, option=option, user=user)
         db.session.add(vote)
         db.session.commit()
 

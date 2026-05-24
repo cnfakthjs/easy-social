@@ -150,6 +150,7 @@ class PollOption(db.Model):
 
 class PollVote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    poll_id = db.Column(db.Integer, db.ForeignKey("poll.id"), nullable=False)
     option_id = db.Column(db.Integer, db.ForeignKey("poll_option.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     created_at = db.Column(
@@ -158,9 +159,10 @@ class PollVote(db.Model):
         default=lambda: datetime.now(timezone.utc),
     )
 
+    poll = db.relationship("Poll", backref="votes")
     option = db.relationship("PollOption", back_populates="votes")
     user = db.relationship("User")
 
     __table_args__ = (
-        UniqueConstraint("option_id", "user_id", name="uq_poll_vote_once_per_option"),
+        UniqueConstraint("poll_id", "user_id", name="uq_poll_vote_once_per_poll"),
     )
