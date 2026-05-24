@@ -48,6 +48,8 @@ def register():
         elif User.query.filter_by(email=email).first():
             error = "That email is already registered."
 
+        session.pop('captcha_answer', None)
+        
         if error:
             flash(error, "error")
         else:
