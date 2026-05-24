@@ -16,6 +16,11 @@
         Password
         <input name="password" type="password" autocomplete="new-password" required>
       </label>
+      <label>
+        驗證碼
+        <img src="{{ url_for('auth.captcha_image') }}" alt="CAPTCHA" id="captcha-img" style="display:block; margin: 8px 0; border-radius:4px;">
+        <button type="button" class="link-button" style="font-size:0.85rem;" onclick="document.getElementById('captcha-img').src='/auth/captcha-image?r='+Math.random()">看不清楚？點我換一張</button>        <input name="captcha" maxlength="10" autocomplete="off" required placeholder="輸入上方圖片文字">
+      </label>
       <button type="submit">Register</button>
     </form>
     <p class="muted">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a>.</p>
