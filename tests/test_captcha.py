@@ -3,7 +3,12 @@ from __future__ import annotations
 import pytest
 
 # ── Unit Tests ────────────────────────────────────────────────
-
+@pytest.fixture()
+def client_with_captcha(app):
+    """A test client that does NOT skip CAPTCHA (TESTING=False for auth)."""
+    app.config["TESTING"] = False
+    yield app.test_client()
+    app.config["TESTING"] = True
 
 @pytest.mark.unit
 def test_captcha_image_returns_png(client):
@@ -49,9 +54,9 @@ def test_captcha_answer_changes_on_refresh(client):
 
 
 @pytest.mark.integration
-def test_register_fails_without_captcha(client):
+def test_register_fails_without_captcha(client_with_captcha):
     """Registration should fail when captcha field is empty."""
-    response = client.post(
+    response = client_with_captcha.post(
         "/auth/register",
         data={
             "username": "alice",
@@ -66,13 +71,13 @@ def test_register_fails_without_captcha(client):
 
 
 @pytest.mark.integration
-def test_register_fails_with_wrong_captcha(client):
+def test_register_fails_with_wrong_captcha(client_with_captcha):
     """Registration should fail when captcha answer is wrong."""
-    client.get("/auth/captcha-image")
-    with client.session_transaction() as sess:
+    client_with_captcha.get("/auth/captcha-image")
+    with client_with_captcha.session_transaction() as sess:
         sess["captcha_answer"] = "ABCD"
 
-    response = client.post(
+    response = client_with_captcha.post(
         "/auth/register",
         data={
             "username": "alice",

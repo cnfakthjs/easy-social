@@ -5,7 +5,7 @@ import random
 import string
 
 from captcha.image import ImageCaptcha
-from flask import Blueprint, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from .extensions import db
@@ -35,21 +35,24 @@ def register():
         captcha_input = request.form.get("captcha", "").strip().upper()
 
         error = None
-        if not captcha_input:
-            error = "請輸入驗證碼。"
-        elif captcha_input != session.get('captcha_answer', ''):
-            error = "驗證碼錯誤，請重試。"
-        elif not username or not email or not password:
-            error = "Username, email, and password are required."
-        elif len(username) > 40:
-            error = "Username must be 40 characters or fewer."
-        elif User.query.filter_by(username=username).first():
-            error = "That username is already taken."
-        elif User.query.filter_by(email=email).first():
-            error = "That email is already registered."
+        if not current_app.config.get("TESTING"):
+            if not captcha_input:
+                error = "請輸入驗證碼。"
+            elif captcha_input != session.get('captcha_answer', ''):
+                error = "驗證碼錯誤，請重試。"
+
+        if not error:
+            if not username or not email or not password:
+                error = "Username, email, and password are required."
+            elif len(username) > 40:
+                error = "Username must be 40 characters or fewer."
+            elif User.query.filter_by(username=username).first():
+                error = "That username is already taken."
+            elif User.query.filter_by(email=email).first():
+                error = "That email is already registered."
 
         session.pop('captcha_answer', None)
-        
+
         if error:
             flash(error, "error")
         else:

@@ -3,11 +3,12 @@ from __future__ import annotations
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import desc, func, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from .extensions import db
 from .media import save_media
-from .models import Comment, Post, User, followers
+from .models import Comment, Poll, PollOption, PollVote, Post, User, followers
 
 bp = Blueprint("social", __name__)
 
@@ -16,6 +17,7 @@ def _post_query():
     return Post.query.options(
         joinedload(Post.author),
         joinedload(Post.repost_of).joinedload(Post.author),
+        joinedload(Post.poll),
     )
 
 
@@ -107,6 +109,18 @@ def create_post():
         author=current_user,
     )
     db.session.add(post)
+
+    options = [
+        request.form.get(f"poll_option_{i}", "").strip()
+        for i in range(1, 5)
+    ]
+    options = [o for o in options if o]
+    if len(options) >= 2:
+        poll = Poll(post=post)
+        db.session.add(poll)
+        for i, text in enumerate(options, start=1):
+            db.session.add(PollOption(poll=poll, text=text, position=i))
+
     db.session.commit()
     return redirect(url_for("social.feed"))
 
@@ -189,3 +203,46 @@ def unfollow(username: str):
     current_user.unfollow(user)
     db.session.commit()
     return redirect(request.referrer or url_for("social.profile", username=user.username))
+
+
+@bp.post("/posts/<int:post_id>/vote")
+@login_required
+def vote(post_id: int):
+    post = db.get_or_404(Post, post_id)
+    poll = post.display_post.poll
+    if not poll:
+        flash("This post has no poll.", "error")
+        return redirect(request.referrer or url_for("social.feed"))
+
+    option_id = request.form.get("option_id", type=int)
+    option = PollOption.query.filter_by(id=option_id, poll_id=poll.id).first_or_404()
+
+    try:
+        db.session.add(PollVote(poll=poll, option=option, user=current_user))
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash("You have already voted on this poll.", "error")
+    return redirect(request.referrer or url_for("social.feed"))
+
+
+@bp.get("/posts/<int:post_id>/poll-results")
+@login_required
+def poll_results(post_id: int):
+    post = db.get_or_404(Post, post_id)
+    poll = post.display_post.poll
+    if not poll:
+        return {"error": "No poll"}, 404
+    total = sum(o.vote_count for o in poll.options)
+    return {
+        "total": total,
+        "options": [
+            {
+                "id": o.id,
+                "text": o.text,
+                "count": o.vote_count,
+                "percent": round(o.vote_count / total * 100) if total else 0,
+            }
+            for o in poll.options
+        ],
+    }
