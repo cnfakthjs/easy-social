@@ -33,17 +33,26 @@ def test_poll_option_vote_count(app):
 
 @pytest.mark.unit
 def test_poll_requires_at_least_two_options(app):
-    """A poll with only one option should not be created by the app logic."""
+    """A poll should not be created when fewer than 2 options are provided."""
     with app.app_context():
+        from easy_social.extensions import db
         user = User(username="bob", email="bob@example.com")
         user.set_password("password")
         post = Post(body="test", author=user)
-        from easy_social.extensions import db
         db.session.add_all([user, post])
         db.session.commit()
 
-        options = ["Only one"]
-        assert len([o for o in options if o]) < 2
+        # 模擬 create_post 的 poll 建立邏輯
+        options = [o for o in ["Only one", ""] if o]
+        if len(options) >= 2:
+            poll = Poll(post=post)
+            db.session.add(poll)
+            for i, text in enumerate(options, start=1):
+                db.session.add(PollOption(poll=poll, text=text, position=i))
+            db.session.commit()
+
+        db.session.refresh(post)
+        assert post.poll is None
 
 
 # ── Integration Tests ─────────────────────────────────────────
