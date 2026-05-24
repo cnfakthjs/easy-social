@@ -4,7 +4,7 @@ import pytest
 
 from easy_social.models import Poll, PollOption, PollVote, Post, User
 
-from conftest import login, logout, register
+from conftest import register
 
 # ── Unit Tests ────────────────────────────────────────────────
 
