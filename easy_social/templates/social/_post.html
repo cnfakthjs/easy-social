@@ -15,7 +15,6 @@
   {% if content.poll %}
     {% set poll = content.poll %}
     {% set total = poll.options | sum(attribute='vote_count') %}
-    {% set user_vote = poll.options | selectattr('votes') | list %}
     <div class="poll-block" style="margin: 12px 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;">
       {% for option in poll.options %}
         {% set pct = ((option.vote_count / total * 100) | round | int) if total > 0 else 0 %}
